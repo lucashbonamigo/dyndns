@@ -1,0 +1,101 @@
+#!/bin/bash
+
+# dyndns - Dynamic DNS Manager
+# Version: 1.0
+
+VERSION="1.0"
+
+show_help() {
+    cat << EOF
+Usage: dyndns [COMMAND] [OPTIONS]
+
+Available Commands:
+    configure [KEY VALUE]    Edit config file or set a specific key=value
+    logs                     Show logs in real time
+    update                   Force DNS update
+    cache                    Clear current IP cache
+
+Options:
+    -h, --help               Show this help message
+    -v, --version            Show version information
+
+Examples:
+    dyndns configure
+    dyndns configure DNS_NAME mydomain.example.com
+    dyndns configure API_TOKEN your_api_token_here
+    dyndns logs
+    dyndns update
+    dyndns --help
+EOF
+}
+
+show_version() {
+    echo "dyndns version $VERSION"
+}
+
+# Function to update configuration key=value
+configure_key() {
+    local key="$1"
+    local value="$2"
+    local config_file="/etc/dyndns/dyndns.conf"
+    
+    if [ -z "$key" ] || [ -z "$value" ]; then
+        echo "Error: Both KEY and VALUE are required." >&2
+        echo "Usage: dyndns configure KEY VALUE" >&2
+        exit 1
+    fi
+
+    # Create directory if it doesn't exist
+    mkdir -p "$(dirname "$config_file")"
+    
+    # Update or add the key=value pair
+    if grep -q "^${key}=" "$config_file" 2>/dev/null; then
+        # Update existing key
+        sed -i "s/^${key}=.*/${key}=${value}/" "$config_file"
+        echo "Updated: ${key}=${value}"
+    else
+        # Add new key
+        echo "${key}=${value}" >> "$config_file"
+        echo "Added: ${key}=${value}"
+    fi
+}
+
+case "$1" in
+    configure)
+        if [ -n "$2" ] && [ -n "$3" ]; then
+            # CLI mode: dyndns configure KEY VALUE
+            configure_key "$2" "$3"
+        else
+            # Interactive mode
+            nano /etc/dyndns/dyndns.conf
+        fi
+        ;;
+
+    logs)
+        tail -f /var/log/dyndns.log
+        ;;
+
+    update)
+        /opt/dyndns/update_dns.sh
+        ;;
+
+    cache)
+        > /tmp/current_ip.txt
+        echo "IP cache cleared."
+        ;;
+
+    -h|--help)
+        show_help
+        ;;
+
+    -v|--version)
+        show_version
+        ;;
+
+    *)
+        echo "Error: Invalid command." >&2
+        echo ""
+        show_help
+        exit 1
+        ;;
+esac

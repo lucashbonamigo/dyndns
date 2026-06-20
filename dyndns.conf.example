@@ -1,0 +1,7 @@
+API_TOKEN=API_TOKEN
+ZONE_ID=ZONE_ID
+RECORD_ID=RECORD_ID
+DNS_NAME=DNS_NAME
+
+CACHE_FILE="/tmp/current_ip.txt"
+LOG_FILE="/var/log/dyndns.log"
