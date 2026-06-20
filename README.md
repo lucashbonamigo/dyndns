@@ -1,126 +1,103 @@
-# Dynamic DNS with Cloudflare
+# 🌐 Dynamic DNS with Cloudflare
 
-A simple project for update register in ClaudFlare always the public IP changed
+A simple project to automatically update your Cloudflare DNS records whenever your public IP address changes.
 
-Nice For:
+---
 
-- Home Server
-- Remote SSH
-- Homelab
-- Nextcloud
-- Self-hosted aplications
-- Study environments
+## 📋 Prerequisites
 
-## Pré-requisitos
+*   A registered domain name
+*   A Cloudflare account
+*   A Linux environment
+*   `curl` installed
+*   `cron` enabled
 
-- Domain registred
-- CloudFlare Account
-- Linux
-- curl
-- cron
+---
 
-## Configuration
+## ⚙️ Configuration Guide
 
-### 1. Add domain in Cloudflare
+### 1. Add Domain to Cloudflare
+Log in to your Cloudflare account and add your domain to a new or existing site.
 
-Add yout domain in Cloudflare.
+### 2. Update Nameservers
+Go to your domain registrar's panel and replace your current nameservers with Cloudflare's nameservers.
 
-### 2. Change Nameservers
+### 3. Create a DNS Record
+In your Cloudflare dashboard, create a new DNS record with the following specifications:
 
-In registrator of domain:
+| Field | Value |
+| :--- | :--- |
+| **Type** | A |
+| **Name** | noip |
+| **IPv4 address** | 1.1.1.1 |
+| **Proxy status** | DNS Only |
 
-change the Nameservers for Cloudflare nameservers.
+### 4. Create an API Token
+Navigate to **My Profile** → **API Tokens** → **Create Token** → **Edit zone DNS**. Configure it as follows:
 
-### 3. Create DNS register
+| Setting | Value |
+| :--- | :--- |
+| **Permissions** | Zone / DNS / Edit |
+| **Zone Resources** | Include / Specific Zone / *Select your domain* |
 
-Exemple:
+### 5. Retrieve IDs
+You will need your **Zone ID** and **Record ID**.
+*   **Zone ID:** Found on your domain's Overview page in the Cloudflare dashboard.
+*   **Record ID:** Run the following command in your terminal, replacing `ZONE_ID` and the domain name:
 
-Type:
-A
-
-Name:
-noip
-
-Content:
-1.1.1.1
-
-Proxy:
-DNS Only
-
-### 4. Create Token API
-
-Cloudflare
-
-My Profile
-→ API Tokens
-→ Create Token
-→ Edit DNS
-
-Permissions:
-
-Zone
-DNS
-Edit
-
-Scop:
-
-Specific Zone
-
-### 5. Get IDs
-
-Zone ID:
-
-Dashboard
-→ Domain Overview
-
-Record ID:
-
+```bash
+curl -X GET "[https://api.cloudflare.com/client/v4/zones/ZONE_ID/dns_records?name=noip.yourdomain.com](https://api.cloudflare.com/client/v4/zones/ZONE_ID/dns_records?name=noip.yourdomain.com)" \
+     -H "Authorization: Bearer YOUR_API_TOKEN" \
+     -H "Content-Type: application/json"
 ```
-curl -X GET \
-"https://api.cloudflare.com/client/v4/zones/ZONE_ID/dns_records?name=noip.yourdomain.com"
+
+### 6. Configure the Application File
+Copy the example configuration file to the correct directory:
+
+```bash
+sudo cp dyndns.conf.example /etc/dyndns/dyndns.conf
 ```
-### 6. Configure archive
 
-COpy:
+### 7. Installation
+Clone the repository on the target machine and execute the installation script:
 
-dyndns.conf.example
-
-for:
-
-/etc/dyndns/dyndns.conf
-
-### 7. Install
-
-You need clone repository in the taget machine and execute:
-
-```
+```bash
 sudo ./install.sh
 ```
 
-### 8. Use
+---
 
-Usage: dyndns [COMMAND] [OPTIONS]
+## 🚀 Usage
 
-Available Commands:
-    configure [KEY VALUE]    Edit config file or set a specific key=value
-    logs                     Show logs in real time
-    update                   Force DNS update
-    cache                    Clear current IP cache
+**Syntax:** `dyndns [COMMAND] [OPTIONS]`
 
-Options:
-    -h, --help               Show this help message
-    -v, --version            Show version information
+| Command | Description |
+| :--- | :--- |
+| `configure [KEY VALUE]` | Edit the config file or set a specific key=value |
+| `logs` | Show logs in real time |
+| `update` | Force a DNS update |
+| `cache` | Clear the current IP cache |
 
-Examples:
-    dyndns configure
-    dyndns configure DNS_NAME mydomain.example.com
-    dyndns configure API_TOKEN api_token_here
-    dyndns logs
-    dyndns update
-    dyndns --help
+**Options:**
+*   `-h, --help`: Show the help message
+*   `-v, --version`: Show version information
 
-## Cron
+**Examples:**
+```bash
+dyndns configure
+dyndns configure DNS_NAME mydomain.example.com
+dyndns configure API_TOKEN api_token_here
+dyndns logs
+dyndns update
+dyndns --help
+```
 
-Execute every 10 minutes:
+---
 
+## ⏱️ Automation (Cron)
+
+To keep your IP updated automatically, add this job to execute every 10 minutes:
+
+```bash
 */10 * * * * /opt/dyndns/update_dns.sh
+```
